@@ -1,33 +1,41 @@
 import streamlit as st
 from transformers import pipeline
+import torch
 
-# Set up the Streamlit page title
-st.title('Python Code Explainer')
+# Check if GPU is available
+device = 0 if torch.cuda.is_available() else -1
 
-# Provide instructions
-st.write("""
-    **Instructions**: Paste your Python code into the box below, 
-    and click the 'Explain Code' button to get an explanation.
-""")
+# Load the model
+st.write("Loading the model...")
+llm_explainer = pipeline("text2text-generation", model="t5-base", device=device)
 
-# Create a text area for user input (Python code)
-code_input = st.text_area("Enter your Python code here", height=300)
+st.title("Python Code Explainer")
 
-# Load the language model for code explanation (using Hugging Face with PyTorch)
-llm_explainer = pipeline("text2text-generation", model="t5-base", framework="pt")
+# User input for Python code
+code_input = st.text_area("Enter your Python code here:", height=300)
 
-# Function to generate explanation for the code
-def explain_code(code):
-    prompt = f"Explain the following Python code that calculates the factorial of a number:\n\n{code}"
-    response = llm_explainer(prompt, max_length=200)[0]['generated_text']
-    return response
+# Function to explain each line of code
+def explain_code_line_by_line(code):
+    # Split the code into lines
+    lines = code.strip().split("\n")
+    explanations = []
+    
+    for line in lines:
+        if line.strip():  # Skip empty lines
+            prompt = f"Explain the following Python code:\n\n{line}"
+            try:
+                response = llm_explainer(prompt, max_length=100, truncation=True)[0]["generated_text"]
+                explanations.append(f"**Code:** `{line}`\n**Explanation:** {response}")
+            except Exception as e:
+                explanations.append(f"**Code:** `{line}`\n**Explanation:** Unable to process. Error: {str(e)}")
+    return explanations
 
-# Button to trigger explanation
-if st.button('Explain Code'):
-    if code_input.strip() == "":
-        st.error("Please enter some Python code to explain.")
+# Display explanation
+if st.button("Explain Code"):
+    if code_input.strip():
+        st.write("### Line-by-Line Explanation:")
+        explanations = explain_code_line_by_line(code_input)
+        for explanation in explanations:
+            st.markdown(explanation)
     else:
-        with st.spinner('Explaining code...'):
-            explanation = explain_code(code_input)
-        st.write("### Explanation:")
-        st.write(explanation)
+        st.warning("Please enter Python code to get an explanation.")
