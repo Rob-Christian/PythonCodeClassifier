@@ -22,7 +22,7 @@ def explain_code_line_by_line(code):
     
     for line in lines:
         if line.strip():  # Skip empty lines
-            prompt = f"Explain the following Python code:\n\n{line}"
+            prompt = f"Explain the following Python code line in detail:\n\n{line}"
             try:
                 response = llm_explainer(prompt, max_length=100, truncation=True)[0]["generated_text"]
                 explanations.append(f"**Code:** `{line}`\n**Explanation:** {response}")
