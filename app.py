@@ -14,11 +14,11 @@ st.write("""
 code_input = st.text_area("Enter your Python code here", height=300)
 
 # Load the language model for code explanation (using Hugging Face with PyTorch)
-llm_explainer = pipeline("text2text-generation", model="t5-small", framework="pt")
+llm_explainer = pipeline("text2text-generation", model="t5-base", framework="pt")
 
 # Function to generate explanation for the code
 def explain_code(code):
-    prompt = f"Explain this Python code:\n\n{code}"
+    prompt = f"Explain the following Python code that calculates the factorial of a number:\n\n{code}"
     response = llm_explainer(prompt, max_length=200)[0]['generated_text']
     return response
 
