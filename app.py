@@ -13,8 +13,8 @@ st.write("""
 # Create a text area for user input (Python code)
 code_input = st.text_area("Enter your Python code here", height=300)
 
-# Load the language model for code explanation (using Hugging Face)
-llm_explainer = pipeline("text2text-generation", model="Salesforce/codegen-350M-mono")
+# Load the language model for code explanation (using Hugging Face with PyTorch)
+llm_explainer = pipeline("text2text-generation", model="Salesforce/codegen-350M-mono", framework="pt")
 
 # Function to generate explanation for the code
 def explain_code(code):
