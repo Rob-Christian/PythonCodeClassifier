@@ -16,18 +16,24 @@ code_input = st.text_area("Enter your Python code here:", height=300)
 
 # Function to explain each line of code
 def explain_code_line_by_line(code):
-    # Split the code into lines
-    lines = code.strip().split("\n")
+    lines = [line.strip() for line in code.strip().split("\n") if line.strip()]
     explanations = []
     
     for line in lines:
-        if line.strip():  # Skip empty lines
-            prompt = f"Explain the following Python code line in detail:\n\n{line}"
-            try:
-                response = llm_explainer(prompt, max_length=100, truncation=True)[0]["generated_text"]
-                explanations.append(f"**Code:** `{line}`\n**Explanation:** {response}")
-            except Exception as e:
-                explanations.append(f"**Code:** `{line}`\n**Explanation:** Unable to process. Error: {str(e)}")
+        try:
+            prompt = f"Explain the following Python code line in detail: '{line}'"
+            response = llm_explainer(
+                prompt,
+                max_length=100,
+                truncation=True,
+                temperature=0.7,
+                top_k=50,
+                top_p=0.9
+            )[0]["generated_text"]
+            explanations.append(f"**Code:** `{line}`\n**Explanation:** {response}")
+        except Exception as e:
+            explanations.append(f"**Code:** `{line}`\n**Explanation:** Unable to process. Error: {str(e)}")
+    
     return explanations
 
 # Display explanation
