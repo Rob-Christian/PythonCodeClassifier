@@ -14,7 +14,7 @@ st.write("""
 code_input = st.text_area("Enter your Python code here", height=300)
 
 # Load the language model for code explanation (using Hugging Face with PyTorch)
-llm_explainer = pipeline("text2text-generation", model="t5-large", framework="pt")
+llm_explainer = pipeline("text2text-generation", model="t5-base", framework="pt")
 
 # Function to generate explanation for the code
 def explain_code(code):
