@@ -1,47 +1,60 @@
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import streamlit as st
-from transformers import pipeline
-import torch
 
-# Check if GPU is available
-device = 0 if torch.cuda.is_available() else -1
+# Load the CodeT5 model and tokenizer
+@st.cache_resource
+def load_codet5_model():
+    tokenizer = AutoTokenizer.from_pretrained("Salesforce/codet5-base")
+    model = AutoModelForSeq2SeqLM.from_pretrained("Salesforce/codet5-base")
+    return tokenizer, model
 
-# Load the model
-st.write("Loading the model...")
-llm_explainer = pipeline("text2text-generation", model="t5-base", device=device)
+tokenizer, model = load_codet5_model()
 
-st.title("Python Code Explainer")
+# Function to explain a single line of code using CodeT5
+def explain_code_codet5(line):
+    input_ids = tokenizer(f"explain code: {line}", return_tensors="pt").input_ids
+    output_ids = model.generate(input_ids, max_length=100, temperature=0.7, repetition_penalty=1.2)
+    return tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
-# User input for Python code
-code_input = st.text_area("Enter your Python code here:", height=300)
+# Clean the explanation to remove redundant sentences
+def clean_explanation(text):
+    sentences = text.split(". ")
+    seen = set()
+    cleaned = []
+    for sentence in sentences:
+        if sentence not in seen:
+            cleaned.append(sentence)
+            seen.add(sentence)
+    return ". ".join(cleaned)
 
-# Function to explain each line of code
+# Function to process the code line by line
 def explain_code_line_by_line(code):
     lines = [line.strip() for line in code.strip().split("\n") if line.strip()]
     explanations = []
     
     for line in lines:
         try:
-            prompt = f"Explain the following Python code line in detail: '{line}'"
-            response = llm_explainer(
-                prompt,
-                max_length=100,
-                truncation=True,
-                temperature=0.7,
-                top_k=50,
-                top_p=0.9
-            )[0]["generated_text"]
-            explanations.append(f"**Code:** `{line}`\n**Explanation:** {response}")
+            explanation = explain_code_codet5(line)
+            cleaned_explanation = clean_explanation(explanation)
+            explanations.append(f"**Code:** `{line}`\n**Explanation:** {cleaned_explanation}")
         except Exception as e:
             explanations.append(f"**Code:** `{line}`\n**Explanation:** Unable to process. Error: {str(e)}")
     
     return explanations
 
-# Display explanation
+# Streamlit UI
+st.title("Python Code Explainer")
+st.write("Provide a Python code snippet, and this app will explain each line using CodeT5.")
+
+# Input area for the user to provide code
+user_code = st.text_area("Enter your Python code below:", height=200)
+
+# Process and display explanations
 if st.button("Explain Code"):
-    if code_input.strip():
+    if user_code.strip():
         st.write("### Line-by-Line Explanation:")
-        explanations = explain_code_line_by_line(code_input)
+        explanations = explain_code_line_by_line(user_code)
         for explanation in explanations:
             st.markdown(explanation)
     else:
-        st.warning("Please enter Python code to get an explanation.")
+        st.warning("Please enter some Python code to explain.")
