@@ -1,18 +1,19 @@
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForCausalLM
 import streamlit as st
 
-# Load the CodeT5 model and tokenizer
+# Load the Llama model and tokenizer
 @st.cache_resource
-def load_codet5_model():
-    tokenizer = AutoTokenizer.from_pretrained("Salesforce/codet5-base")
-    model = AutoModelForSeq2SeqLM.from_pretrained("Salesforce/codet5-base")
+def load_llama_model():
+    tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-hf")
+    model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf")
     return tokenizer, model
 
-tokenizer, model = load_codet5_model()
+tokenizer, model = load_llama_model()
 
-# Function to explain a single line of code using CodeT5
-def explain_code_codet5(line):
-    input_ids = tokenizer(f"explain code: {line}", return_tensors="pt").input_ids
+# Function to explain a single line of code using Llama
+def explain_code_llama(line):
+    input_text = f"Explain this Python code: {line}"
+    input_ids = tokenizer(input_text, return_tensors="pt").input_ids
     output_ids = model.generate(input_ids, max_length=100, temperature=0.7, repetition_penalty=1.2)
     return tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
@@ -34,7 +35,7 @@ def explain_code_line_by_line(code):
     
     for line in lines:
         try:
-            explanation = explain_code_codet5(line)
+            explanation = explain_code_llama(line)
             cleaned_explanation = clean_explanation(explanation)
             explanations.append(f"**Code:** `{line}`\n**Explanation:** {cleaned_explanation}")
         except Exception as e:
@@ -44,7 +45,7 @@ def explain_code_line_by_line(code):
 
 # Streamlit UI
 st.title("Python Code Explainer")
-st.write("Provide a Python code snippet, and this app will explain each line using CodeT5.")
+st.write("Provide a Python code snippet, and this app will explain each line using Llama.")
 
 # Input area for the user to provide code
 user_code = st.text_area("Enter your Python code below:", height=200)
